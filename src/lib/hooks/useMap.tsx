@@ -1,31 +1,40 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface OutUseMapType {
-  values: object
+  map: object
   size: number
   get: (key: any) => any
   has: (key: any) => boolean
   set: (key: any, value: object) => void
   del: (key: any) => any
-  clear: ()=> void 
+  clear: () => void
   forEach: (func: (value: object, key: any) => void) => void
   keys: () => any[]
 }
 
+type MapType = {
+  [key: string]: any
+}
+
 export default function useMap(): OutUseMapType {
-  const [map, setMap] = useState({})
+  const [map, setMap] = useState<MapType>({})
   const [size, setSize] = useState(0)
 
   const get = (key: string) => map[key]
 
-  const set = (key: string, value: any) => setMap((preMap) => ({ ...preMap, [key]: value }))
+  const set = useCallback(
+    (key: string, value: any) => setMap((preMap) => ({ ...preMap, [key]: value })), 
+    []
+  )
 
   const has = (key: string) => Object.prototype.hasOwnProperty.call(map, key)
-  
-  // @ts-expect-error
-  const del = (key: string) => setMap(({ [key]: value, ...restObj }) => ({ ...restObj }))
 
-  const clear = () => setMap({})
+  const del = useCallback(
+    (key: string) => setMap(({ [key]: value, ...restObj }) => ({ ...restObj })),
+    []
+  )
+
+  const clear = useCallback(() => setMap({}), [])
 
   const forEach = (func: (value: any, key: string) => void) => {
     const keys = Object.keys(map)
@@ -45,7 +54,7 @@ export default function useMap(): OutUseMapType {
   }, [map])
 
   return {
-    values: map,
+    map,
     size,
     get,
     set,

@@ -14,29 +14,30 @@ type CountArrayType = [
 
 export default function useCountArray(): CountArrayType {
   const [array, setArray] = useState<number[]>([])
-  const length = useMemo(() => array.length, [array])
 
-  const increase = () => setArray((preArr) => {
-    const lastValue = preArr[length - 1] || 0
-    return [...preArr, lastValue + 1]
-  })
+  const increase = useCallback(() => setArray((preArr) => {
+    const lastValue = preArr[preArr.length - 1] + 1 || 0
+    return [...preArr, lastValue]
+  }), [])
 
-  const del = (index: number) => {
-    const _array = array.slice(0, length) 
+  const del = useCallback((index: number) => setArray((preArr) => {
+    const _array = preArr.slice(0, preArr.length)
     _array.splice(index, 1)
-    return setArray(_array)
-  }
+    return _array
+  }), [])
 
-  const decrease = () => setArray((preArr) => preArr.slice(0, length - 1))
+  const decrease = useCallback(() => setArray((preArr) => preArr.slice(0, -1)), [])
 
   const clear = useCallback(() => setArray([]), [])
 
-  const actions = {
-    increase,
-    del,
-    decrease,
-    clear
-  }
+  const actions = useMemo(() => {
+    return {
+      increase,
+      del,
+      decrease,
+      clear
+    }
+  }, [increase, del, decrease, clear])
 
   return [array, actions]
 }
