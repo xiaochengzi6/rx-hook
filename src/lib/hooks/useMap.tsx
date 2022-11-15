@@ -1,67 +1,47 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import useMemoizedFn from "./useMemoizedFn";
 
-interface OutUseMapType {
-  map: object
-  size: number
-  get: (key: any) => any
-  has: (key: any) => boolean
-  set: (key: any, value: object) => void
-  del: (key: any) => any
-  clear: () => void
-  forEach: (func: (value: object, key: any) => void) => void
-  keys: () => any[]
-}
+function useMap<K, T>(initialValue?: Iterable<readonly [K, T]>) {
+  const getInitialValue = () => {
+    return initialValue === undefined ? new Map() : new Map(initialValue)
+  } 
 
-type MapType = {
-  [key: string]: any
-}
+  const [map, setMap] = useState<Map<K, T>>(() => getInitialValue())
 
-export default function useMap(): OutUseMapType {
-  const [map, setMap] = useState<MapType>({})
-  const [size, setSize] = useState(0)
-
-  const get = (key: string) => map[key]
-
-  const set = useCallback(
-    (key: string, value: any) => setMap((preMap) => ({ ...preMap, [key]: value })), 
-    []
-  )
-
-  const has = (key: string) => Object.prototype.hasOwnProperty.call(map, key)
-
-  const del = useCallback(
-    (key: string) => setMap(({ [key]: value, ...restObj }) => ({ ...restObj })),
-    []
-  )
-
-  const clear = useCallback(() => setMap({}), [])
-
-  const forEach = (func: (value: any, key: string) => void) => {
-    const keys = Object.keys(map)
-    for (let i = 0, length = keys.length; i < length; i++) {
-      const key = keys[i]
-      func.call(map, map[key], key)
-    }
+  const set = (key: K, value: T) => {
+    setMap((prev)=>{
+      const temp = new Map(prev)
+      temp.set(key, value)
+      return temp 
+    })
   }
 
-  const keys = () => Object.keys(map)
+  const setAll = (newMap: Iterable<readonly [K, T]>) => {
+    setMap(new Map(newMap))
+  }
 
-  useEffect(() => {
-    if (Object.keys(map).length !== size) {
-      const newSize = Object.keys(map).length
-      setSize(newSize)
-    }
-  }, [map])
+  const remove = (key: K) => {
+    setMap((prev) => {
+      const temp = new Map(prev)
+      temp.delete(key)
+      return temp
+    })
+  }
 
-  return {
+  const reset = () => setMap(getInitialValue())
+
+  const get = (key: K) => map.get(key)
+
+  return [
     map,
-    size,
-    get,
-    set,
-    has,
-    del,
-    clear,
-    forEach,
-    keys
-  }
+    {
+      set: useMemoizedFn(set),
+      setAll: useMemoizedFn(setAll),
+      remove: useMemoizedFn(remove),
+      reset: useMemoizedFn(reset),
+      get: useMemoizedFn(get)
+    }
+  ] as const 
 }
+
+export default useMap

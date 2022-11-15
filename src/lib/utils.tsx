@@ -10,6 +10,8 @@ export const invariant = (value: any, message?: string) => {
   }
 }
 
+export const isNumber = (val: unknown):val is number => typeof val === 'number'
+
 const is = (x: any, y: any) => {
   if(x === y) {
     // +0 !== -0
