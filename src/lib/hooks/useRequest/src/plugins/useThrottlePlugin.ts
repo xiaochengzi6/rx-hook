@@ -21,6 +21,7 @@ const useThrottlePlugin: Plugin<any, any[]> = (
     if (throttleWait) {
       const _originRunAsync = fetchInstance.runAsync.bind(fetchInstance);
 
+      // 设置节流函数
       throttledRef.current = throttle(
         (callback) => {
           callback();
@@ -31,6 +32,7 @@ const useThrottlePlugin: Plugin<any, any[]> = (
 
       // throttle runAsync should be promise
       // https://github.com/lodash/lodash/issues/4400#issuecomment-834800398
+      // 
       fetchInstance.runAsync = (...args) => {
         return new Promise((resolve, reject) => {
           throttledRef.current?.(() => {
@@ -42,6 +44,7 @@ const useThrottlePlugin: Plugin<any, any[]> = (
       };
 
       return () => {
+        // 让其还是原来的 runAsync 
         fetchInstance.runAsync = _originRunAsync;
         throttledRef.current?.cancel();
       };

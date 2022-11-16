@@ -1,6 +1,12 @@
 import { useRef } from 'react';
 import type { Plugin, Timeout } from '../types';
 
+/**
+ * 延迟 loading 变成 true 的时间 防止闪烁
+ * @param fetchInstance 
+ * @param param1 
+ * @returns 
+ */
 const useLoadingDelayPlugin: Plugin<any, any[]> = (fetchInstance, { loadingDelay }) => {
   const timerRef = useRef<Timeout>();
 

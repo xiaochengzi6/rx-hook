@@ -27,6 +27,7 @@ function useRequestImplement<TData, TParams extends any[]>(
   // 生一个请求实例(地址不会改变)
   const fetchInstance = useCreation(() => {
     // 过滤掉值为 null, undefined, false, 0, '', NaN 排除假值
+    // 触发 hook 这里的 hook 是 onInit 阶段
     const initState = plugins.map((p) => p?.onInit?.(fetchOptions)).filter(Boolean);
 
     return new Fetch<TData, TParams>(

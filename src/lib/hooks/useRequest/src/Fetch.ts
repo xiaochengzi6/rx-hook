@@ -72,6 +72,8 @@ export default class Fetch<TData, TParams extends any[]> {
     this.setState({
       loading: true,
       params,
+      // onBefore 阶段返回的 state 可以影响到这里的 loading 
+      // 比如: useLoadingDelayPlugin
       ...state,
     });
 
@@ -107,6 +109,7 @@ export default class Fetch<TData, TParams extends any[]> {
 
       // const formattedResult = this.options.formatResultRef.current ? this.options.formatResultRef.current(res) : res;
 
+      // 请求开始时候就要设置 loading = true 
       this.setState({
         data: res,
         error: undefined,
