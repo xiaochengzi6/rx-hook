@@ -7,6 +7,7 @@ const trigger = (key: string, data: any) => {
   }
 };
 
+// 存储 [key: [functions]] 格式
 const subscribe = (key: string, listener: Listener) => {
   if (!listeners[key]) {
     listeners[key] = [];

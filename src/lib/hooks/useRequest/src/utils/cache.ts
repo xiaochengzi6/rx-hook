@@ -9,17 +9,19 @@ export interface CachedData<TData = any, TParams = any> {
 interface RecordData extends CachedData {
   timer: Timer | undefined;
 }
-
+// 将数据保存在 Map 对象中
 const cache = new Map<CachedKey, RecordData>();
 
 const setCache = (key: CachedKey, cacheTime: number, cachedData: CachedData) => {
   const currentCache = cache.get(key);
+  // 如果存在 setTimeout 就会清空它
   if (currentCache?.timer) {
     clearTimeout(currentCache.timer);
   }
 
   let timer: Timer | undefined = undefined;
 
+  // 设置过期时间，等时间过期就将数据删除
   if (cacheTime > -1) {
     // if cache out, clear it
     timer = setTimeout(() => {
@@ -27,6 +29,7 @@ const setCache = (key: CachedKey, cacheTime: number, cachedData: CachedData) => 
     }, cacheTime);
   }
 
+  // 保存现在的状态
   cache.set(key, {
     ...cachedData,
     timer,

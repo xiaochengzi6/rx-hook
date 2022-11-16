@@ -7,11 +7,14 @@ import type { CachedData } from '../utils/cache';
 import * as cachePromise from '../utils/cachePromise';
 import * as cacheSubscribe from '../utils/cacheSubscribe';
 
+// 会将当前请求成功的数据缓存起来。
+// 下次组件初始化时，如果有缓存数据，我们会优先返回缓存数据，
+// 然后在背后发送新请求，也就是 SWR 的能力
 const useCachePlugin: Plugin<any, any[]> = (
   fetchInstance,
   {
     cacheKey,
-    cacheTime = 5 * 60 * 1000,
+    cacheTime = 5 * 60 * 1000, // 8个多小时
     staleTime = 0,
     setCache: customSetCache,
     getCache: customGetCache,
@@ -22,11 +25,14 @@ const useCachePlugin: Plugin<any, any[]> = (
   const currentPromiseRef = useRef<Promise<any>>();
 
   const _setCache = (key: string, cachedData: CachedData) => {
+    // 如果是自定义的就使用自定义的
     if (customSetCache) {
       customSetCache(cachedData);
     } else {
+      // 存储到 Map 中
       cache.setCache(key, cacheTime, cachedData);
     }
+    // 触发监听函数
     cacheSubscribe.trigger(key, cachedData.data);
   };
 
@@ -37,13 +43,16 @@ const useCachePlugin: Plugin<any, any[]> = (
     return cache.getCache(key);
   };
 
+  // 创建一个唯一的实例 且不会随之更新永远是初始化的那个对象
   useCreation(() => {
     if (!cacheKey) {
       return;
     }
 
     // get data from cache when init
+    // 初始化从缓存中取数据
     const cacheData = _getCache(cacheKey);
+    // 取出的数据是保存在 data 中的
     if (cacheData && Object.hasOwnProperty.call(cacheData, 'data')) {
       fetchInstance.state.data = cacheData.data;
       fetchInstance.state.params = cacheData.params;
@@ -53,11 +62,14 @@ const useCachePlugin: Plugin<any, any[]> = (
     }
 
     // subscribe same cachekey update, trigger update
+    // 订阅相同的cachekey更新，触发更新
     unSubscribeRef.current = cacheSubscribe.subscribe(cacheKey, (data) => {
+      // 使整个组件更新
       fetchInstance.setState({ data });
     });
   }, []);
 
+  // 组件卸载的时候执行
   useUnmount(() => {
     unSubscribeRef.current?.();
   });
@@ -79,7 +91,7 @@ const useCachePlugin: Plugin<any, any[]> = (
         return {
           loading: false,
           data: cacheData?.data,
-          returnNow: true,
+          returnNow: true, // 组件已经有值
         };
       } else {
         // If the data is stale, return data, and request continue
