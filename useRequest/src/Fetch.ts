@@ -26,7 +26,8 @@ export default class Fetch<TData, TParams extends any[]> {
   ) {
     this.state = {
       ...this.state,
-      // 手动的触发 options.manual = true 
+      // 手动的触发 options.manual = true ==> loading = false 
+      // 在使用的时候一开始就会进入 loading 加载状态 加载完成就通过 loading 来显示数据
       loading: !options.manual,
       // 初始值
       ...initState,
