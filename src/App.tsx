@@ -1,5 +1,5 @@
+import TestHook from "./lib/TEST_hook_API/Test_hook";
 import TestCountArray from "./TestCountArray";
-
 function App() {
   return (
     <div 
@@ -9,6 +9,13 @@ function App() {
 
       <span>测试 UseCountArray </span>
       <TestCountArray />
+
+      <div>
+        <span> 测试 hook </span>
+        <TestHook></TestHook>
+      </div>
+
+
     </div>
   );
 }

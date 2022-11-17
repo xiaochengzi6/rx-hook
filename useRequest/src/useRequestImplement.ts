@@ -27,9 +27,10 @@ function useRequestImplement<TData, TParams extends any[]>(
   // 生一个请求实例(地址不会改变)
   const fetchInstance = useCreation(() => {
     // 过滤掉值为 null, undefined, false, 0, '', NaN 排除假值
-    // 触发 hook 这里的 hook 是 onInit 阶段
+    // 触发所有的 hook 其中 useAutoRunPlugin hook 有一个 onInit 函数 这里回去调用判断状态 
     const initState = plugins.map((p) => p?.onInit?.(fetchOptions)).filter(Boolean);
 
+    // 创建好 Fetch 对象
     return new Fetch<TData, TParams>(
       serviceRef,
       fetchOptions,
@@ -38,6 +39,7 @@ function useRequestImplement<TData, TParams extends any[]>(
       Object.assign({}, ...initState),
     );
   }, []);
+
   fetchInstance.options = fetchOptions;
   // run all plugins hooks
   // 执行所有的 plugin, 每个 Plugin 都返回对象，对象存储不同阶段的方法等待这调用, 存储在 fetchInstance.pluginImpls 数组中
@@ -49,6 +51,7 @@ function useRequestImplement<TData, TParams extends any[]>(
       // useCachePlugin can set fetchInstance.state.params from cache when init
       const params = fetchInstance.state.params || options.defaultParams || [];
       // @ts-ignore
+      // 开始触发 使其开始执行
       fetchInstance.run(...params);
     }
   });

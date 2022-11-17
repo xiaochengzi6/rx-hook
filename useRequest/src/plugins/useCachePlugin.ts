@@ -32,7 +32,7 @@ const useCachePlugin: Plugin<any, any[]> = (
       // 存储到 Map 中
       cache.setCache(key, cacheTime, cachedData);
     }
-    // 触发监听函数
+    // 如果设置了 key 就要去触发 key 监听函数
     cacheSubscribe.trigger(key, cachedData.data);
   };
 
@@ -56,7 +56,10 @@ const useCachePlugin: Plugin<any, any[]> = (
     if (cacheData && Object.hasOwnProperty.call(cacheData, 'data')) {
       fetchInstance.state.data = cacheData.data;
       fetchInstance.state.params = cacheData.params;
+
+      // 当 新鲜时间 == -1 || 时间间隔 小于新鲜时间
       if (staleTime === -1 || new Date().getTime() - cacheData.time <= staleTime) {
+        // 状态设置为 false 
         fetchInstance.state.loading = false;
       }
     }
@@ -87,6 +90,7 @@ const useCachePlugin: Plugin<any, any[]> = (
       }
 
       // If the data is fresh, stop request
+      // 返回 data && 停止 request 
       if (staleTime === -1 || new Date().getTime() - cacheData.time <= staleTime) {
         return {
           loading: false,
@@ -95,6 +99,7 @@ const useCachePlugin: Plugin<any, any[]> = (
         };
       } else {
         // If the data is stale, return data, and request continue
+        // 返回值 && 继续请求
         return {
           data: cacheData?.data,
         };
@@ -104,6 +109,7 @@ const useCachePlugin: Plugin<any, any[]> = (
       let servicePromise = cachePromise.getCachePromise(cacheKey);
 
       // If has servicePromise, and is not trigger by self, then use it
+      // 如果有servicePromise，并且不是由trigger触发的，那么使用它
       if (servicePromise && servicePromise !== currentPromiseRef.current) {
         return { servicePromise };
       }

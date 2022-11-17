@@ -11,6 +11,7 @@ const setCachePromise = (cacheKey: CachedKey, promise: Promise<any>) => {
   cachePromise.set(cacheKey, promise);
 
   // no use promise.finally for compatibility
+  // promise 结束就会从 Map 中删除
   promise
     .then((res) => {
       cachePromise.delete(cacheKey);
