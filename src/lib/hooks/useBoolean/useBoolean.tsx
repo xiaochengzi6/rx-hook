@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import useToggle from "./useToggle"
+import useToggle from "../useToggle"
 
 
 interface Actions {
@@ -27,3 +27,5 @@ function useBoolean(defaultValue = false) {
 }
 
 export default useBoolean
+
+// test @seehttps://juejin.cn/post/7152709386752753701

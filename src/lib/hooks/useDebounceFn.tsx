@@ -4,7 +4,7 @@ import { DebounceOptions } from "./useDebounce";
 import useLatest from "./useLatest";
 import useUnmount from "./useUnmount";
 
-type noop = (...args: any) => any 
+type noop = (...args: any[]) => any 
 
 function useDebounceFn<T extends noop>(fn: T, options?: DebounceOptions) {
   const fnRef = useLatest(fn)
