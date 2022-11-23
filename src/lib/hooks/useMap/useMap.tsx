@@ -1,18 +1,26 @@
-import { useState } from "react";
-import useMemoizedFn from "./useMemoizedFn";
+import { useMemo, useState } from "react";
+
+export interface Actions<K, T> {
+  set: (key: K, value: T) => void;
+  setAll: (newMap: Iterable<readonly [K,T]>) => void;
+  remove: (key: K) => void;
+  reset: () => void;
+  get: (key: K) => void;
+}
 
 function useMap<K, T>(initialValue?: Iterable<readonly [K, T]>) {
   const getInitialValue = () => {
     return initialValue === undefined ? new Map() : new Map(initialValue)
-  } 
+  }
 
+  // 惰性求值
   const [map, setMap] = useState<Map<K, T>>(() => getInitialValue())
 
   const set = (key: K, value: T) => {
-    setMap((prev)=>{
+    setMap((prev) => {
       const temp = new Map(prev)
       temp.set(key, value)
-      return temp 
+      return temp
     })
   }
 
@@ -32,16 +40,17 @@ function useMap<K, T>(initialValue?: Iterable<readonly [K, T]>) {
 
   const get = (key: K) => map.get(key)
 
-  return [
-    map,
-    {
-      set: useMemoizedFn(set),
-      setAll: useMemoizedFn(setAll),
-      remove: useMemoizedFn(remove),
-      reset: useMemoizedFn(reset),
-      get: useMemoizedFn(get)
+  const actions: Actions<K, T> = useMemo(()=>{
+    return {
+      set,
+      setAll,
+      remove,
+      reset,
+      get
     }
-  ] as const 
+  }, [set, setAll, remove, reset, get])
+
+  return [map, actions] as const
 }
 
 export default useMap

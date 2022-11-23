@@ -16,7 +16,7 @@ export const invariant = (value: any, message?: string) => {
 export const isNumber = (val: unknown): val is number => typeof val === 'number'
 export const isFunction = (val: unknown): val is Function => typeof val === 'function'
 export const isBoolean = (val: unknown): val is Boolean => typeof val === 'boolean'
-
+// export const isArray = (val: unknown): val is Array => typeof val === ''
 const is = (x: any, y: any) => {
   if (x === y) {
     // +0 !== -0
