@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
 type Options = {
   retry?: number;
@@ -8,57 +8,51 @@ type Options = {
   wait?: number;
 }
 
-type ErrorState = ErrorEvent | null
-type ScriptState = HTMLScriptElement | null
+type ErrorState = ErrorEvent | null;
+type ScriptState = HTMLScriptElement | null;
+type UnScriptEffect = (src: string, model: string) => void;
+
 const delayTimer = 3000
 
-const createScriptDom = (src: string, model: string) => {
-  const script = document.createElement('script')
-  /* 兼容 html4 */
-  script.type = 'text/javascript'
-  model === 'defer'
-    ? script.defer = true
-    : script.async = true
-
-  script.src = src
-
-  return script
-}
-
-const checkExisting = (src: string) => {
+function checkExisting(src: string): boolean
+function checkExisting(src: string, isReturn: boolean): HTMLElement
+function checkExisting(src: string, isReturn?: boolean): HTMLElement | boolean {
   const existing: HTMLScriptElement | null = document.querySelector(
     `script[src='${src}']`
   )
 
-  return existing ? true : false
-}
-
-class CreateScriptEffect {
-
-  constructor() {
-
+  if(isReturn && existing){
+    return existing
+  }
+  
+  if(existing){
+    return true 
   }
 
-  // 创建、监听
+  return false
+}
+
+class CreateScript {
+  onLoadFn
+  onErrorFn
+  constructor(onLoadFn: () => void, onErrorFn: () => void) {
+    this.onLoadFn = onLoadFn
+    this.onErrorFn = onErrorFn
+  }
+
   unScriptEffect(src: string, model: string) {
+    this.removeElementError(src)
 
-    useEffect(() => {
-      const script = createScriptDom(src, model)
+    const script = this.createScriptDom(src, model)
 
-      script.addEventListener('load', handleLoad)
-      script.addEventListener('error', handleError)
-      document.body.appendChild(script)
+    script.onload = this.onLoadFn
+    script.onerror = this.onErrorFn
 
-      return () => {
-        script.removeEventListener('load', handleLoad)
-        script.removeEventListener('error', handleError)
-      }
-    })
+    document.body.appendChild(script)
   }
 
   createScriptDom(src: string, model: string) {
     const script = document.createElement('script')
-    /* 兼容 html4 */
     script.type = 'text/javascript'
     model === 'defer'
       ? script.defer = true
@@ -69,10 +63,78 @@ class CreateScriptEffect {
     return script
   }
 
-
+  removeElementError(src: string) {
+    const lastScript = checkExisting(src, true)
+    if (lastScript) {
+      document.body.removeChild(lastScript)
+    }
+  }
 }
 
-function useScriptDom(src: string, options = {} as Options): [boolean, ErrorState] {
+function useScriptDom_2(src: string, options = {} as Options): [boolean, ErrorState] {
+  const { retry = 3, model = 'defer', wait = delayTimer } = options
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<ErrorState>(null)
+
+  const retryCount = useRef(retry)
+  const unScriptRef = useRef<UnScriptEffect>()
+
+  if (checkExisting(src)) {
+    !loading && setLoading(true)
+  }
+
+  const handleLoad = () => {
+    setLoading(true)
+  }
+
+  const handleError = () => {
+    if (retryCount.current > 0) {
+      retryCount.current--
+      setTimeout(() => {
+        unScriptRef.current?.(src, model)
+      }, wait)
+    } else {
+      setError(error)
+    }
+  }
+
+  useEffect(() => {
+    const scriptObj = new CreateScript(handleLoad, handleError)
+    unScriptRef.current = scriptObj.unScriptEffect.bind(scriptObj)
+
+    unScriptRef.current(src, model)
+
+    return () => {
+      scriptObj.removeElementError(src)
+    }
+  }, [])
+
+  return [loading, error]
+}
+
+
+function useScriptDom_1(src: string, options = {} as Options): [boolean, ErrorState] {
+  // =========================
+  const createScriptDom = (src: string, model: string) => {
+    const script = document.createElement('script')
+    script.type = 'text/javascript'
+    model === 'defer'
+      ? script.defer = true
+      : script.async = true
+
+    script.src = src
+
+    return script
+  }
+
+  const checkExisting = (src: string) => {
+    const existing: HTMLScriptElement | null = document.querySelector(
+      `script[src='${src}']`
+    )
+
+    return existing ? true : false
+  }
+  // =========================
   const { retry = 3, model = 'defer', wait = delayTimer } = options
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<ErrorState>(null)
@@ -131,7 +193,7 @@ function useScriptDom(src: string, options = {} as Options): [boolean, ErrorStat
   return [loading, error]
 }
 
-export default useScriptDom
+export default useScriptDom_2
 
 // 参考文章 https://juejin.cn/post/6894629999215640583
 // https://www.runoob.com/tags/tag-script.html
