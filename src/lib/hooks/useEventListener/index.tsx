@@ -14,7 +14,7 @@ function useEventListener (event: string, handler: (...e: any) => void, target?:
       targetElement = target 
     }
 
-    if(!targetElement?.addEventListener) return void 0
+    if(!targetElement?.addEventListener) return 
     
     const useEventListener = (event: Event)=> {
       return handleRef.current(event)

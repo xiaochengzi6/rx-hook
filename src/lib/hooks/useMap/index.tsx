@@ -5,7 +5,7 @@ export interface Actions<K, T> {
   setAll: (newMap: Iterable<readonly [K,T]>) => void;
   remove: (key: K) => void;
   reset: () => void;
-  get: (key: K) => void;
+  get: (key: K) => T | undefined;
 }
 
 function useMap<K, T>(initialValue?: Iterable<readonly [K, T]>) {

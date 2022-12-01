@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import useMap from "../useMap"
+import useMap from ".."
 
 const setUp = (initialValue?: Iterable<readonly [any, any]>) => renderHook(() => useMap(initialValue))
 
@@ -92,4 +92,15 @@ describe('React Hook useMap', () => {
     expect([...result.current[0]]).toEqual([])
   })
   
+  it('测试 使用 Map', () => {
+    const {result} = setUp(new Map([
+      ['foo', '1'],
+      ['bar', '2']
+    ]))
+    expect([...result.current[0]]).toEqual([
+      ['foo', '1'],
+      ['bar', '2']
+    ])
+  })
+
 })
