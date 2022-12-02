@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isNumber } from "../../utils";
 import { clearRafTimeout, setRafTimeout } from "../useSetTimeout";
 
 interface Timeout {
@@ -8,8 +9,6 @@ interface Timeout {
 type Options = {
   retry?: number;
   model?: string;
-  onload?: () => void;
-  onReject?: () => void;
   wait?: number;
 }
 
@@ -84,10 +83,8 @@ function useScriptDom(src: string, options = {} as Options): [boolean, ErrorStat
   const unScriptRef = useRef<UnScriptEffect>()
   const timerRef = useRef<Timeout>()
 
+  // 如果 <script> 存在就不再创建
   if (checkExisting(src)) {
-    // todo 页面上 但是没有加载出来 该怎么办？
-    // 请求数据失败就开始正常流程 
-    // 成功然后缓存一下数据？？(可行吗？) 或者查看缓存是否有数据？(这里要确定数据能否被我们给返回) 然后让状态变成 loading: true 
     !loading && setLoading(true)
   }
 
@@ -96,9 +93,14 @@ function useScriptDom(src: string, options = {} as Options): [boolean, ErrorStat
   }
 
   const handleError = () => {
-    if (retryCount.current > 0) {
+    if (
+      isNumber(retryCount.current)
+      && retryCount.current > 0
+      && isNumber(wait)
+    ) {
       retryCount.current--
       timerRef.current = setRafTimeout(() => {
+        // retry 
         unScriptRef.current?.(src, model)
       }, wait)
     } else {
@@ -107,17 +109,17 @@ function useScriptDom(src: string, options = {} as Options): [boolean, ErrorStat
   }
 
   useEffect(() => {
+    // loading 存在说明不需要再创建了
     if (loading) return
     const scriptObj = new CreateScript(handleLoad, handleError)
     unScriptRef.current = scriptObj.unScriptEffect.bind(scriptObj)
     unScriptRef.current(src, model)
-  }, [])
 
-  useEffect(() => {
     return () => {
+      // 如果再请求的过程中提前卸载组件就取消
       clearRafTimeout(timerRef.current)
     }
-  })
+  }, [])
 
   return [loading, error]
 }
