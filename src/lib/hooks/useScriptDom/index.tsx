@@ -1,4 +1,9 @@
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { clearRafTimeout, setRafTimeout } from "../useSetTimeout";
+
+interface Timeout {
+  id: number | NodeJS.Timeout
+}
 
 type Options = {
   retry?: number;
@@ -9,7 +14,6 @@ type Options = {
 }
 
 type ErrorState = ErrorEvent | null;
-type ScriptState = HTMLScriptElement | null;
 type UnScriptEffect = (src: string, model: string) => void;
 
 const delayTimer = 3000
@@ -21,20 +25,20 @@ function checkExisting(src: string, isReturn?: boolean): HTMLElement | boolean {
     `script[src='${src}']`
   )
 
-  if(isReturn && existing){
+  if (isReturn && existing) {
     return existing
   }
-  
-  if(existing){
-    return true 
+
+  if (existing) {
+    return true
   }
 
   return false
 }
 
 class CreateScript {
-  onLoadFn
-  onErrorFn
+  onLoadFn = () => { }
+  onErrorFn = () => { }
   constructor(onLoadFn: () => void, onErrorFn: () => void) {
     this.onLoadFn = onLoadFn
     this.onErrorFn = onErrorFn
@@ -71,15 +75,19 @@ class CreateScript {
   }
 }
 
-function useScriptDom_2(src: string, options = {} as Options): [boolean, ErrorState] {
+function useScriptDom(src: string, options = {} as Options): [boolean, ErrorState] {
   const { retry = 3, model = 'defer', wait = delayTimer } = options
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<ErrorState>(null)
 
   const retryCount = useRef(retry)
   const unScriptRef = useRef<UnScriptEffect>()
+  const timerRef = useRef<Timeout>()
 
   if (checkExisting(src)) {
+    // todo 页面上 但是没有加载出来 该怎么办？
+    // 请求数据失败就开始正常流程 
+    // 成功然后缓存一下数据？？(可行吗？) 或者查看缓存是否有数据？(这里要确定数据能否被我们给返回) 然后让状态变成 loading: true 
     !loading && setLoading(true)
   }
 
@@ -90,7 +98,7 @@ function useScriptDom_2(src: string, options = {} as Options): [boolean, ErrorSt
   const handleError = () => {
     if (retryCount.current > 0) {
       retryCount.current--
-      setTimeout(() => {
+      timerRef.current = setRafTimeout(() => {
         unScriptRef.current?.(src, model)
       }, wait)
     } else {
@@ -99,101 +107,19 @@ function useScriptDom_2(src: string, options = {} as Options): [boolean, ErrorSt
   }
 
   useEffect(() => {
+    if (loading) return
     const scriptObj = new CreateScript(handleLoad, handleError)
     unScriptRef.current = scriptObj.unScriptEffect.bind(scriptObj)
-
     unScriptRef.current(src, model)
-
-    return () => {
-      scriptObj.removeElementError(src)
-    }
   }, [])
 
-  return [loading, error]
-}
-
-
-function useScriptDom_1(src: string, options = {} as Options): [boolean, ErrorState] {
-  // =========================
-  const createScriptDom = (src: string, model: string) => {
-    const script = document.createElement('script')
-    script.type = 'text/javascript'
-    model === 'defer'
-      ? script.defer = true
-      : script.async = true
-
-    script.src = src
-
-    return script
-  }
-
-  const checkExisting = (src: string) => {
-    const existing: HTMLScriptElement | null = document.querySelector(
-      `script[src='${src}']`
-    )
-
-    return existing ? true : false
-  }
-  // =========================
-  const { retry = 3, model = 'defer', wait = delayTimer } = options
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<ErrorState>(null)
-
-  const retryCount = useRef(retry)
-  const scriptRef = useRef<ScriptState>(null)
-
-  const handleLoad = () => {
-    setLoading(true)
-    console.log('加载成功')
-  }
-  const handleRetry = () => {
-    const script = createScriptDom(src, model)
-
-    // todo 这里还需要重新再去绑定事件才行
-    document.body.appendChild(script)
-  }
-
-  const handleError = (error: ErrorEvent) => {
-    if (retryCount.current >= 0) {
-      // 考虑使用 useSetTimeout 包裹
-      retryCount.current--
-      setTimeout(() => {
-        // todo 重新加载
-        handleRetry()
-      }, wait)
-    } else {
-      setError(error)
-    }
-    console.log('加载失败', error)
-  }
-
-  if (checkExisting(src)) {
-    console.log('在页面上存在')
-    !loading && setLoading(true)
-  }
-
   useEffect(() => {
-    // 若页面上有该文件就直接返回
-    // todo 这里还需要确定添加到页面是是否等于加载成功
-    // 页面上存在也不能说明添加成功
-    if (loading || error) return
-
-    scriptRef.current = createScriptDom(src, model)
-    const { current: script } = scriptRef
-    script.addEventListener('load', handleLoad)
-    script.addEventListener('error', handleError)
-    handleRetry()
-
     return () => {
-      script.removeEventListener('load', handleLoad)
-      script.removeEventListener('error', handleError)
+      clearRafTimeout(timerRef.current)
     }
   })
 
   return [loading, error]
 }
 
-export default useScriptDom_2
-
-// 参考文章 https://juejin.cn/post/6894629999215640583
-// https://www.runoob.com/tags/tag-script.html
+export default useScriptDom
