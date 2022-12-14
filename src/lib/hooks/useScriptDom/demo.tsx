@@ -94,5 +94,7 @@ function useScriptDom(src: string, options = {} as Options): [boolean, ErrorStat
   return [loading, error]
 }
 
-// 参考文章 https://juejin.cn/post/6894629999215640583
+// [参考文章](https://juejin.cn/post/6894629999215640583)
 // https://www.runoob.com/tags/tag-script.html
+
+

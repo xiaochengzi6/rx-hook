@@ -6,10 +6,11 @@ interface Timeout {
   id: number | NodeJS.Timeout
 }
 
-type Options = {
+export interface Options extends Partial<HTMLScriptElement> {
   retry?: number;
-  model?: string;
   wait?: number;
+  onload?: () => void;
+  onerror?: () => void;
 }
 
 type ErrorState = ErrorEvent | null;
@@ -17,27 +18,21 @@ type UnScriptEffect = (src: string, model: string) => void;
 
 const delayTimer = 3000
 
-function checkExisting(src: string): boolean
-function checkExisting(src: string, isReturn: boolean): HTMLElement
 function checkExisting(src: string, isReturn?: boolean): HTMLElement | boolean {
   const existing: HTMLScriptElement | null = document.querySelector(
     `script[src='${src}']`
   )
 
-  if (isReturn && existing) {
-    return existing
-  }
-
-  if (existing) {
-    return true
-  }
-
-  return false
+  return (
+    isReturn
+      ? (existing ? existing : false)
+      : false
+  )
 }
 
 class CreateScript {
-  onLoadFn = () => { }
-  onErrorFn = () => { }
+  onLoadFn
+  onErrorFn
   constructor(onLoadFn: () => void, onErrorFn: () => void) {
     this.onLoadFn = onLoadFn
     this.onErrorFn = onErrorFn
@@ -89,7 +84,10 @@ function useScriptDom(src: string, options = {} as Options): [boolean, ErrorStat
   }
 
   const handleLoad = () => {
-    setLoading(true)
+    setLoading(() => {
+      console.log('loading: true')
+      return true
+    })
   }
 
   const handleError = () => {
